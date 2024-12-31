@@ -102,7 +102,7 @@ def generate_scatter_chart(word_counter):
     scatter = (
         Scatter()
             .add_xaxis(x_data)
-            .add_yaxis("频率", y_data, symbol=SymbolType.ARROW)
+            .add_yaxis("频率", y_data, symbol=opts.SymbolType.ARROW)
             .set_global_opts(title_opts=opts.TitleOpts(title="前20个词的频率散点图"))
     )
     return scatter.render_embed()
@@ -135,14 +135,20 @@ def generate_plotly_bar_chart(word_counter):
     fig = px.bar(df, x='Word', y='Frequency', title="前20个词的频率（Plotly）")
     return fig.to_html()
 
+
 def generate_matplotlib_pie_chart(word_counter):
     most_common_20 = word_counter.most_common(20)
     labels, sizes = zip(*most_common_20)
+
+    # 设置中文字体
+    plt.rcParams['font.sans-serif'] = ['SimHei']  # 使用黑体或其他已安装的中文字体
+    plt.rcParams['axes.unicode_minus'] = False  # 正常显示负号
+
     fig1, ax1 = plt.subplots()
     ax1.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=90)
     ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
     plt.title("前20个词的分布（Matplotlib）")
-    return fig1
+    return fig1  # 只返回Figure对象
 
 st.title("文本分析与可视化")
 url = st.text_input("请输入文章的URL")
@@ -165,11 +171,12 @@ if url:
             "散点图": generate_scatter_chart,
             "漏斗图": generate_funnel_chart,
             "柱状图 (Plotly)": generate_plotly_bar_chart,
-            "饼图 (Matplotlib)": lambda wc: st.pyplot(generate_matplotlib_pie_chart(wc))
+            "饼图 (Matplotlib)": generate_matplotlib_pie_chart  # 直接引用函数名
         }
 
         if chart_type in chart_generators:
             if chart_type == "饼图 (Matplotlib)":
+                # 在这里调用 st.pyplot() 并传入生成的 Figure 对象
                 st.pyplot(chart_generators[chart_type](filtered_word_counter))
             else:
                 chart_html = chart_generators[chart_type](filtered_word_counter)
